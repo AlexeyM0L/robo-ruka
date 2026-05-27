@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Статус</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 32px 16px 96px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: #0f1115;
+    color: #e7e9ee;
+  }
+  .panel {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 28px 40px;
+    background: #1a1d24;
+    border: 1px solid #262a33;
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+  }
+  .label {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    border: 1px solid transparent;
+    cursor: pointer;
+    background: none;
+    font-family: inherit;
+    transition: transform 0.08s ease, filter 0.15s ease;
+  }
+  .badge:hover { filter: brightness(1.15); }
+  .badge:active { transform: scale(0.97); }
+  .badge:focus-visible { outline: 2px solid #6a7180; outline-offset: 3px; }
+  .badge .dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+  }
+  .badge.on {
+    background: rgba(46, 204, 113, 0.12);
+    color: #2ecc71;
+    border-color: rgba(46, 204, 113, 0.4);
+    box-shadow: 0 0 24px rgba(46, 204, 113, 0.25);
+  }
+  .badge.on .dot {
+    background: #2ecc71;
+    box-shadow: 0 0 12px #2ecc71;
+  }
+  .badge.off {
+    background: rgba(231, 76, 60, 0.10);
+    color: #e74c3c;
+    border-color: rgba(231, 76, 60, 0.4);
+  }
+  .badge.off .dot {
+    background: #e74c3c;
+  }
+  .error {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 16px;
+    background: #3a1f1f;
+    color: #f5b3b3;
+    border: 1px solid #5a2828;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .hint {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #6a7180;
+    font-size: 13px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .commands {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px 32px;
+    background: #1a1d24;
+    border: 1px solid #262a33;
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    min-width: 360px;
+  }
+  .commands-title {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #6a7180;
+  }
+  .commands-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .cmd-btn {
+    flex: 1 1 0;
+    min-width: 100px;
+    padding: 12px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    color: #e7e9ee;
+    background: #232732;
+    border: 1px solid #2f3441;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+  }
+  .cmd-btn:hover { background: #2b3142; border-color: #3a4154; }
+  .cmd-btn:active { transform: scale(0.97); }
+  .cmd-btn:focus-visible { outline: 2px solid #6a7180; outline-offset: 2px; }
+  .cmd-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .cmd-btn.busy { background: #2a3142; border-color: #4a5470; }
+  .cmd-log {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    color: #aeb4c2;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  .cmd-log li { padding: 4px 0; border-top: 1px solid #232732; }
+  .cmd-log li:first-child { border-top: none; }
+  .cmd-log .ts { color: #6a7180; margin-right: 8px; }
+  .cmd-log .empty { color: #6a7180; font-style: italic; }
+</style>
+</head>
+<body>
+  {{if .Error}}<div class="error">{{.Error}}</div>{{end}}
+  <div class="panel">
+    <span class="label">Статус</span>
+    <button
+      type="button"
+      id="toggle"
+      class="badge {{if .IsOn}}on{{else}}off{{end}}"
+      data-state="{{if .IsOn}}on{{else}}off{{end}}"
+      aria-pressed="{{if .IsOn}}true{{else}}false{{end}}"
+    >
+      <span class="dot"></span>
+      <span class="badge-text">{{if .IsOn}}On{{else}}Off{{end}}</span>
+    </button>
+  </div>
+  <div class="commands">
+    <div class="commands-title">Команды</div>
+    <div class="commands-row">
+      <button type="button" class="cmd-btn" data-cmd="1">Команда 1</button>
+      <button type="button" class="cmd-btn" data-cmd="2">Команда 2</button>
+      <button type="button" class="cmd-btn" data-cmd="3">Команда 3</button>
+    </div>
+    <ul id="cmd-log" class="cmd-log">
+      <li class="empty">команд пока не было</li>
+    </ul>
+  </div>
+  <script>
+    (function () {
+      const btn = document.getElementById('toggle');
+      const text = btn.querySelector('.badge-text');
+
+      function render(state) {
+        btn.dataset.state = state;
+        btn.classList.toggle('on', state === 'on');
+        btn.classList.toggle('off', state === 'off');
+        btn.setAttribute('aria-pressed', state === 'on' ? 'true' : 'false');
+        text.textContent = state === 'on' ? 'On' : 'Off';
+      }
+
+      btn.addEventListener('click', async () => {
+        const next = btn.dataset.state === 'on' ? 'off' : 'on';
+        const prev = btn.dataset.state;
+        render(next);
+        btn.disabled = true;
+        try {
+          const res = await fetch('/?status=' + next, {
+            headers: { 'Accept': 'text/html' },
+          });
+          if (!res.ok) throw new Error('http ' + res.status);
+        } catch (e) {
+          render(prev);
+          console.error(e);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      const logEl = document.getElementById('cmd-log');
+      const MAX_LOG = 8;
+
+      function pushLog(msg) {
+        const empty = logEl.querySelector('.empty');
+        if (empty) empty.remove();
+        const now = new Date();
+        const ts = now.toTimeString().slice(0, 8);
+        const li = document.createElement('li');
+        li.innerHTML = '<span class="ts"></span><span class="msg"></span>';
+        li.querySelector('.ts').textContent = ts;
+        li.querySelector('.msg').textContent = msg;
+        logEl.prepend(li);
+        while (logEl.children.length > MAX_LOG) logEl.lastElementChild.remove();
+      }
+
+      document.querySelectorAll('.cmd-btn').forEach((cmdBtn) => {
+        cmdBtn.addEventListener('click', async () => {
+          if (btn.dataset.state !== 'on') {
+            pushLog('рука выключена — команда ' + cmdBtn.dataset.cmd + ' пропущена');
+            return;
+          }
+          const id = cmdBtn.dataset.cmd;
+          cmdBtn.disabled = true;
+          cmdBtn.classList.add('busy');
+          const original = cmdBtn.textContent;
+          cmdBtn.textContent = 'Выполняется…';
+          pushLog('→ отправлена команда ' + id);
+          try {
+            await new Promise((r) => setTimeout(r, 600));
+            pushLog('✓ команда ' + id + ' выполнена');
+          } finally {
+            cmdBtn.classList.remove('busy');
+            cmdBtn.disabled = false;
+            cmdBtn.textContent = original;
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
