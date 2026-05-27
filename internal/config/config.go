@@ -1,6 +1,9 @@
 package config
 
-import "github.com/ilyakaznacheev/cleanenv"
+import (
+	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/joho/godotenv"
+)
 
 type Config struct {
 	Host         string `env:"HOST" env-default:"localhost"`
@@ -11,8 +14,8 @@ type Config struct {
 
 func NewConfig() (*Config, error) {
 	var cfg Config
-
-	if err := cleanenv.ReadConfig(".env", &cfg); err != nil {
+	_ = godotenv.Load(".env")
+	if err := cleanenv.ReadEnv(&cfg); err != nil {
 		return nil, err
 	}
 	return &cfg, nil
