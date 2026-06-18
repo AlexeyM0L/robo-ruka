@@ -9,7 +9,7 @@ type Config struct {
 	Host         string `env:"HOST" env-default:"localhost"`
 	Port         int    `env:"PORT" env-default:"8080"`
 	TemplatePath string `env:"TEMPLATE_PATH" env-default:"web/index.html"`
-	StatePath    string `env:"STATE_PATH" env-default:"state.txt"`
+	DBPath       string `env:"DB_PATH" env-default:"robo-ruka.db"`
 }
 
 func NewConfig() (*Config, error) {

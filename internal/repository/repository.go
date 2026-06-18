@@ -1,6 +1,10 @@
 package repository
 
-import "robo-ruka/internal/domain"
+import (
+	"database/sql"
+
+	"robo-ruka/internal/domain"
+)
 
 type Status interface {
 	Get() (domain.Status, error)
@@ -11,8 +15,8 @@ type Repository struct {
 	Status Status
 }
 
-func NewRepository(statePath string) *Repository {
+func NewRepository(db *sql.DB) *Repository {
 	return &Repository{
-		Status: NewStatusRepository(statePath),
+		Status: NewStatusRepository(db),
 	}
 }

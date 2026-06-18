@@ -1,35 +1,30 @@
 package repository
 
 import (
+	"database/sql"
 	"errors"
-	"io/fs"
-	"os"
-	"sync"
 
 	"robo-ruka/internal/domain"
 )
 
 type StatusRepository struct {
-	path string
-	mu   sync.RWMutex
+	db *sql.DB
 }
 
-func NewStatusRepository(path string) *StatusRepository {
-	return &StatusRepository{path: path}
+func NewStatusRepository(db *sql.DB) *StatusRepository {
+	return &StatusRepository{db: db}
 }
 
 func (r *StatusRepository) Get() (domain.Status, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	data, err := os.ReadFile(r.path)
-	if errors.Is(err, fs.ErrNotExist) {
+	var value string
+	err := r.db.QueryRow(`SELECT value FROM status WHERE id = 1`).Scan(&value)
+	if errors.Is(err, sql.ErrNoRows) {
 		return domain.StatusOff, nil
 	}
 	if err != nil {
 		return "", err
 	}
-	s, ok := domain.ParseStatus(string(data))
+	s, ok := domain.ParseStatus(value)
 	if !ok {
 		return domain.StatusOff, nil
 	}
@@ -37,7 +32,10 @@ func (r *StatusRepository) Get() (domain.Status, error) {
 }
 
 func (r *StatusRepository) Set(s domain.Status) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return os.WriteFile(r.path, []byte(s), 0o644)
+	_, err := r.db.Exec(
+		`INSERT INTO status (id, value) VALUES (1, ?)
+		 ON CONFLICT(id) DO UPDATE SET value = excluded.value`,
+		string(s),
+	)
+	return err
 }

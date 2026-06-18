@@ -3,3 +3,6 @@
 .claude
 state.txt
 /server
+*.db
+*.db-wal
+*.db-shm

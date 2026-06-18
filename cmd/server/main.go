@@ -24,15 +24,21 @@ func main() {
 		log.Fatalf("parse template: %v", err)
 	}
 
-	repo := repository.NewRepository(cfg.StatePath)
+	db, err := repository.NewDB(cfg.DBPath)
+	if err != nil {
+		log.Fatalf("open db: %v", err)
+	}
+	defer db.Close()
+
+	repo := repository.NewRepository(db)
 	svc := service.NewService(repo)
 	h := handler.New(svc, tmpl)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", h.Index)
-	
+
 	addr := net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port))
-	log.Printf("listening on %s, state=%s", addr, cfg.StatePath)
+	log.Printf("listening on %s, db=%s", addr, cfg.DBPath)
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatalf("server: %v", err)
 	}
